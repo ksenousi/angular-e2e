@@ -1,23 +1,32 @@
-import { AppPage } from './app.po';
-import { browser, logging } from 'protractor';
+import { launch, Browser, Page } from 'puppeteer';
+import { assertNoErrors, assertAgainstScreenshot } from './base';
 
 describe('workspace-project App', () => {
-  let page: AppPage;
+  let browser: Browser;
+  let page: Page;
 
-  beforeEach(() => {
-    page = new AppPage();
+  beforeEach(async () => {
+    browser = await launch();
+    page = await browser.newPage();
+    await page.goto('http://localhost:4200');
+    assertNoErrors(page);
   });
 
-  it('should display welcome message', () => {
-    page.navigateTo();
-    expect(page.getTitleText()).toEqual('angular-mock app is running!');
+  it('Test Puppeteer screenshot', async () => {
+    const text = await page.$eval(
+      'app-root .content span',
+      (el: Element) => el.innerHTML
+    );
+    expect(text).toBe('angular-mock app is running!');
+
+    // await page.screenshot({ path: 'e2e/screenshots/example.png' });
+    await assertAgainstScreenshot(page, 'home', 'default');
+
+    const title = await page.title();
+    expect(title).toBe('AngularMock');
   });
 
   afterEach(async () => {
-    // Assert that there are no errors emitted from the browser
-    const logs = await browser.manage().logs().get(logging.Type.BROWSER);
-    expect(logs).not.toContain(jasmine.objectContaining({
-      level: logging.Level.SEVERE,
-    } as logging.Entry));
+    await browser.close();
   });
 });
